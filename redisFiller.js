@@ -68,13 +68,20 @@ export class RedisFiller {
 
     /**
      * Publishes the fillers to redis via `Set`.
+     * 
+     * @param {(key: string, value: any) => string} valueSelector 
      */
-    async publish() {
+    async publish(valueSelector = undefined) {
         const pipeline = this.#redis.pipeline();
 
         for (const { key, filler } of this.enumerateFillers())
             for (const value of filler)
-                pipeline.sadd(key, value.toString());
+                pipeline.sadd(
+                    key,
+                    valueSelector != null
+                        ? valueSelector(key, value)
+                        : value.toString()
+                );
 
         return await pipeline.exec();
     }
